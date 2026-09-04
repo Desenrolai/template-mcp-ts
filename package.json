@@ -2,6 +2,7 @@
   "name": "@desenrolai/mcp-template",
   "version": "0.1.0",
   "description": "Template: MCP server (TypeScript, stdio transport)",
+  "private": true,
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
