@@ -71,6 +71,42 @@ tool de verdade — listagem, execução e rejeição de entrada inválida. Pref
 esse formato ao adicionar tools: um teste que só verifica que o server "existe"
 passa mesmo quando a tool está quebrada.
 
+## CI: runner do repo gerado
+
+O workflow roda em runner **hospedado** por padrão. Este template é público — em
+repo público o Actions hospedado é gratuito, e apontar self-hosted aqui deixaria
+um PR de fork executar código de terceiro dentro do cluster.
+
+⚠️ **O repo gerado é privado, e nele esse default não vale.** Com a cota
+hospedada bloqueada por billing, o job **falha em ~2 s sem executar nenhum
+step** — e sem mensagem no log que oriente.
+
+Zero steps, sozinho, não identifica nada: um job `skipped` pelo `if:` também
+reporta zero. **O separador é a conclusão**: `failure` em ~2 s é billing;
+`skipped` é o `if:`. Parece YAML quebrado, não é — a causa costuma vir na
+*annotation* do job, não no log. Não perca tempo procurando erro no workflow.
+
+Antes do primeiro push, defina duas **variáveis de repositório** (Settings →
+Secrets and variables → Actions → Variables) com **array JSON** de labels:
+
+| Variável           | Valor                              | Usada por                    |
+| ------------------ | ---------------------------------- | ---------------------------- |
+| `CI_RUNNER`        | `["self-hosted","desenrolai"]`     | job `ci`                     |
+| `CI_RUNNER_DOCKER` | `["self-hosted","docker-builder"]` | jobs que constroem a imagem  |
+
+```bash
+gh variable set CI_RUNNER --body '["self-hosted","desenrolai"]'
+gh variable set CI_RUNNER_DOCKER --body '["self-hosted","docker-builder"]'
+```
+
+São dois pools diferentes de propósito: o pool `desenrolai` **não tem Docker**
+(`dockerEnabled: false`), só o `docker-builder` tem. Build de imagem no pool
+errado falha por falta de daemon.
+
+JSON é obrigatório: `runs-on` com a string `self-hosted,desenrolai` vira **um**
+label contendo vírgula — não dois — e o job fica em `queued` para sempre. Sem as
+variáveis definidas, o default hospedado continua valendo.
+
 ## Pool de teste e cgroup
 
 `scripts/cpu-limit.mjs` lê o limite de CPU do cgroup (v2 `cpu.max`, v1
