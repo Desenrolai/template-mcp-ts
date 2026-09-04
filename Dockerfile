@@ -1,35 +1,33 @@
 # ─── builder ───────────────────────────────────────────────────────────────────
-FROM node:22-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
 
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src/ ./src/
 
 RUN npm run build
 
 # ─── runtime ───────────────────────────────────────────────────────────────────
-FROM node:22-bookworm-slim AS runtime
+FROM node:24-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 
 WORKDIR /app
-
-# Non-root user for security
-RUN addgroup --system --gid 1001 mcp && \
-    adduser --system --uid 1001 --ingroup mcp mcp
 
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
-USER mcp
+# Usuario nao-root ja existente na imagem oficial (uid 1000).
+USER node
 
-# MCP uses stdio transport — no port is exposed.
-# This container is intended to be run by MCP clients (e.g., Claude Desktop, Cursor).
-# Do NOT add EXPOSE or an HTTP health check here.
+# MCP usa transporte stdio — o forge.yaml declara deploy.kind: stdio.
+# Este container e executado por um cliente MCP (Claude Desktop, Cursor).
+# NAO adicione EXPOSE nem HEALTHCHECK HTTP aqui: nao ha porta para sondar, e um
+# HEALTHCHECK que escreva em stdout corromperia o proprio protocolo.
 CMD ["node", "dist/index.js"]
