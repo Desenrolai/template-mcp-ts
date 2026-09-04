@@ -17,6 +17,8 @@ export function createServer(): McpServer {
     'hello',
     'Returns a greeting message',
     { name: z.string().min(1).describe('Name to greet') },
+    // Este texto e asserido literalmente em `server.test.ts` — o porque da
+    // duplicacao esta comentado la, junto da assercao.
     async ({ name }) => ({
       content: [{ type: 'text', text: `Hello, ${name}! This is the Desenrolai MCP template.` }],
     }),

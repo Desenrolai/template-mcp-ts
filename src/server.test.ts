@@ -40,6 +40,12 @@ describe('createServer', () => {
 
     const result = await client.callTool({ name: 'hello', arguments: { name: 'Desenrolai' } });
 
+    // A string abaixo repete o texto de `src/server.ts` DE PROPOSITO. Nao troque
+    // por um import da constante: a assercao passaria a seguir qualquer rename do
+    // texto e voltaria a ser tautologica — verde com a tool quebrada. Esta suite
+    // reprovar quando voce renomear a tool e o comportamento desejado, nao um
+    // defeito. (O README repete isso na secao de rename, que manda apagar a si
+    // mesma; por isso a razao mora aqui tambem.)
     expect(result.content).toEqual([
       { type: 'text', text: 'Hello, Desenrolai! This is the Desenrolai MCP template.' },
     ]);
